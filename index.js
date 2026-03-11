@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
@@ -31,36 +30,44 @@ async function getToken() {
   return cachedToken;
 }
 
-const TICKERS = [
-  'S16M6','S17A6','S30A6','S29Y6','TTJ26',
-  'T30J6','S31L6','S31G6','TTS26','TO26',
-  'S3OO6','S3ON6','TTD26','T15E7','T30A7',
-  'T31Y7','T30J7','TY3OP'
-];
-
-async function getDatosTicker(ticker, token) {
-  const url = `${IOL_API_URL}/bCBA/Titulos/${ticker}/CotizacionDetalle`;
-  const r = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-  if (!r.ok) return null;
-  const d = await r.json();
-
-  // Extraer todos los datos que necesitamos
-  const precio     = d.ultimoPrecio || d.cierreAnterior || null;
-  const vencimiento = d.fechaVencimiento || d.vencimiento || null;
-  const pagoFinal  = d.laminaMinima || d.valorNominal || d.pagoAlVencimiento || 100;
-
-  return { ticker, precio, vencimiento, pagoFinal };
-}
+const LECAPS_DATA = {
+  'S16M6': { vencimiento: '2026-03-16', pagoFinal: 104.6210 },
+  'S17A6': { vencimiento: '2026-04-17', pagoFinal: 110.1251 },
+  'S30A6': { vencimiento: '2026-04-30', pagoFinal: 127.4860 },
+  'S29Y6': { vencimiento: '2026-05-29', pagoFinal: 132.0440 },
+  'T30J6': { vencimiento: '2026-06-30', pagoFinal: 144.8960 },
+  'S31L6': { vencimiento: '2026-07-31', pagoFinal: 117.6770 },
+  'S31G6': { vencimiento: '2026-08-31', pagoFinal: 127.0640 },
+  'S30O6': { vencimiento: '2026-10-30', pagoFinal: 135.2780 },
+  'S30N6': { vencimiento: '2026-11-30', pagoFinal: 129.8880 },
+  'T15E7': { vencimiento: '2027-01-15', pagoFinal: 161.1040 },
+  'T30A7': { vencimiento: '2027-04-30', pagoFinal: 157.3410 },
+  'T31Y7': { vencimiento: '2027-05-31', pagoFinal: 151.5630 },
+  'T30J7': { vencimiento: '2027-06-30', pagoFinal: 156.0370 },
+};
 
 app.get('/lecaps', async (req, res) => {
   try {
     const token = await getToken();
     const resultados = [];
 
-    for (const ticker of TICKERS) {
+    for (const [ticker, info] of Object.entries(LECAPS_DATA)) {
       try {
-        const datos = await getDatosTicker(ticker, token);
-        if (datos && datos.precio) resultados.push(datos);
+        const r = await fetch(
+          `${IOL_API_URL}/bCBA/Titulos/${ticker}/CotizacionDetalle`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        if (r.ok) {
+          const d = await r.json();
+          const precio = d.ultimoPrecio || d.cierreAnterior || null;
+          if (precio) resultados.push({
+            ticker,
+            precio,
+            vencimiento: info.vencimiento,
+            pagoFinal: info.pagoFinal,
+            descripcion: d.descripcionTitulo || ticker
+          });
+        }
       } catch(e) {}
       await new Promise(r => setTimeout(r, 150));
     }
@@ -71,19 +78,14 @@ app.get('/lecaps', async (req, res) => {
   }
 });
 
-// Endpoint de debug — muestra todos los campos que devuelve IOL para un ticker
 app.get('/debug/:ticker', async (req, res) => {
   try {
     const token = await getToken();
-    const r = await fetch(
-      `${IOL_API_URL}/bCBA/Titulos/${req.params.ticker}/CotizacionDetalle`,
-      { headers: { 'Authorization': `Bearer ${token}` } }
-    );
+    const r = await fetch(`${IOL_API_URL}/bCBA/Titulos/${req.params.ticker}/CotizacionDetalle`,
+      { headers: { 'Authorization': `Bearer ${token}` } });
     if (!r.ok) return res.status(r.status).json({ error: 'Ticker no encontrado' });
     res.json(await r.json());
-  } catch(e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/test', async (req, res) => {
