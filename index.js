@@ -4,87 +4,91 @@ const cors = require('cors');
 const fetch = require('node-fetch');
 
 const app = express();
-
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
+app.use(cors({ origin: '*', methods: ['GET','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }));
 app.options('*', cors());
 app.use(express.json());
 
 const IOL_TOKEN_URL = 'https://api.invertironline.com/token';
 const IOL_API_URL   = 'https://api.invertironline.com/api/v2';
 
-let cachedToken = null;
-let tokenExpiry  = null;
+let cachedToken = null, tokenExpiry = null;
 
 async function getToken() {
   if (cachedToken && tokenExpiry && Date.now() < tokenExpiry) return cachedToken;
-
   const resp = await fetch(IOL_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      username:   process.env.IOL_USER,
-      password:   process.env.IOL_PASS,
+      username: process.env.IOL_USER,
+      password: process.env.IOL_PASS,
       grant_type: 'password'
     })
   });
-
-  if (!resp.ok) {
-    const txt = await resp.text();
-    throw new Error(`IOL auth failed: ${resp.status} - ${txt}`);
-  }
-
+  if (!resp.ok) throw new Error(`IOL auth failed: ${resp.status}`);
   const data = await resp.json();
   cachedToken = data.access_token;
-  tokenExpiry  = Date.now() + (data.expires_in - 60) * 1000;
+  tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
   return cachedToken;
 }
 
-app.get('/lecaps', async (req, res) => {
-  const TICKERS = [
-    'S16Y5','S30Y5','S13J5','S27J5','S11L5','S25L5',
-    'S15G5','S29G5','S12S5','S30S5','S17O5','S31O5',
-    'S14N5','S28N5','S12D5','S26D5','S16E6','S30E6',
-    'S13F6','S27F6'
-  ];
+const TICKERS = [
+  'S16M6','S17A6','S30A6','S29Y6','TTJ26',
+  'T30J6','S31L6','S31G6','TTS26','TO26',
+  'S3OO6','S3ON6','TTD26','T15E7','T30A7',
+  'T31Y7','T30J7','TY3OP'
+];
 
+async function getDatosTicker(ticker, token) {
+  const url = `${IOL_API_URL}/bCBA/Titulos/${ticker}/CotizacionDetalle`;
+  const r = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+  if (!r.ok) return null;
+  const d = await r.json();
+
+  // Extraer todos los datos que necesitamos
+  const precio     = d.ultimoPrecio || d.cierreAnterior || null;
+  const vencimiento = d.fechaVencimiento || d.vencimiento || null;
+  const pagoFinal  = d.laminaMinima || d.valorNominal || d.pagoAlVencimiento || 100;
+
+  return { ticker, precio, vencimiento, pagoFinal };
+}
+
+app.get('/lecaps', async (req, res) => {
   try {
     const token = await getToken();
-    const precios = {};
+    const resultados = [];
 
     for (const ticker of TICKERS) {
       try {
-        const r = await fetch(
-          `${IOL_API_URL}/bCBA/Titulos/${ticker}/CotizacionDetalle`,
-          { headers: { 'Authorization': `Bearer ${token}` } }
-        );
-        if (r.ok) {
-          const d = await r.json();
-          const p = d.ultimoPrecio || d.cierreAnterior;
-          if (p) precios[ticker] = p;
-        }
+        const datos = await getDatosTicker(ticker, token);
+        if (datos && datos.precio) resultados.push(datos);
       } catch(e) {}
       await new Promise(r => setTimeout(r, 150));
     }
 
-    res.json({ precios, actualizadoEn: new Date().toISOString() });
+    res.json({ instrumentos: resultados, actualizadoEn: new Date().toISOString() });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
+// Endpoint de debug — muestra todos los campos que devuelve IOL para un ticker
+app.get('/debug/:ticker', async (req, res) => {
+  try {
+    const token = await getToken();
+    const r = await fetch(
+      `${IOL_API_URL}/bCBA/Titulos/${req.params.ticker}/CotizacionDetalle`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    if (!r.ok) return res.status(r.status).json({ error: 'Ticker no encontrado' });
+    res.json(await r.json());
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
 });
 
 app.get('/test', async (req, res) => {
-  try {
-    const token = await getToken();
-    res.json({ ok: true, token: token.substring(0,20)+'...' });
-  } catch(e) {
-    res.status(500).json({ ok: false, error: e.message });
-  }
+  try { await getToken(); res.json({ ok: true, msg: 'Auth IOL OK' }); }
+  catch(e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 app.get('/', (req, res) => res.json({ status: 'ok', msg: 'LECAPS API funcionando' }));
