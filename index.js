@@ -46,33 +46,57 @@ const LECAPS_DATA = {
   'T30J7': { vencimiento: '2027-06-30', pagoFinal: 156.0370 },
 };
 
+async function getPrecio(ticker, token) {
+  const r = await fetch(
+    `${IOL_API_URL}/bCBA/Titulos/${ticker}/CotizacionDetalle`,
+    { headers: { 'Authorization': `Bearer ${token}` } }
+  );
+  if (!r.ok) return null;
+  const d = await r.json();
+  return d.ultimoPrecio || d.cierreAnterior || null;
+}
+
+async function getMEP(token) {
+  // AL30 precio en pesos / AL30D precio en dólares = MEP
+  const [pesos, dolares] = await Promise.all([
+    getPrecio('AL30', token),
+    getPrecio('AL30D', token)
+  ]);
+  if (!pesos || !dolares) return null;
+  return pesos / dolares;
+}
+
 app.get('/lecaps', async (req, res) => {
   try {
     const token = await getToken();
     const resultados = [];
 
+    // Traer MEP en paralelo mientras traemos LECAPS
+    const mepPromise = getMEP(token);
+
     for (const [ticker, info] of Object.entries(LECAPS_DATA)) {
       try {
-        const r = await fetch(
-          `${IOL_API_URL}/bCBA/Titulos/${ticker}/CotizacionDetalle`,
-          { headers: { 'Authorization': `Bearer ${token}` } }
-        );
-        if (r.ok) {
-          const d = await r.json();
-          const precio = d.ultimoPrecio || d.cierreAnterior || null;
-          if (precio) resultados.push({
+        const precio = await getPrecio(ticker, token);
+        if (precio) {
+          resultados.push({
             ticker,
             precio,
             vencimiento: info.vencimiento,
             pagoFinal: info.pagoFinal,
-            descripcion: d.descripcionTitulo || ticker
           });
         }
       } catch(e) {}
       await new Promise(r => setTimeout(r, 150));
     }
 
-    res.json({ instrumentos: resultados, actualizadoEn: new Date().toISOString() });
+    const mep = await mepPromise;
+
+    res.json({
+      instrumentos: resultados,
+      mep: mep ? +mep.toFixed(2) : null,
+      actualizadoEn: new Date().toISOString()
+    });
+
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
