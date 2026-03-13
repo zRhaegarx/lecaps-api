@@ -46,78 +46,26 @@ const LECAPS_DATA = {
   'T30J7': { vencimiento: '2027-06-30', pagoFinal: 156.0370 },
 };
 
-async function getPrecio(ticker, token) {
+async function getPrecioDetalle(ticker, token) {
   const r = await fetch(
     `${IOL_API_URL}/bCBA/Titulos/${ticker}/CotizacionDetalle`,
     { headers: { 'Authorization': `Bearer ${token}` } }
   );
   if (!r.ok) return null;
   const d = await r.json();
-  return d.ultimoPrecio || d.cierreAnterior || null;
+  return {
+    precio: d.ultimoPrecio || d.cierreAnterior || null,
+    cierreAnterior: d.cierreAnterior || null
+  };
 }
 
 async function getMEP(token) {
-  // AL30 precio en pesos / AL30D precio en dólares = MEP
   const [pesos, dolares] = await Promise.all([
-    getPrecio('AL30', token),
-    getPrecio('AL30D', token)
+    getPrecioDetalle('AL30', token),
+    getPrecioDetalle('AL30D', token)
   ]);
-  if (!pesos || !dolares) return null;
-  return pesos / dolares;
+  if (!pesos?.precio || !dolares?.precio) return null;
+  return pesos.precio / dolares.precio;
 }
 
-app.get('/lecaps', async (req, res) => {
-  try {
-    const token = await getToken();
-    const resultados = [];
-
-    // Traer MEP en paralelo mientras traemos LECAPS
-    const mepPromise = getMEP(token);
-
-    for (const [ticker, info] of Object.entries(LECAPS_DATA)) {
-      try {
-        const precio = await getPrecio(ticker, token);
-        if (precio) {
-          resultados.push({
-            ticker,
-            precio,
-            vencimiento: info.vencimiento,
-            pagoFinal: info.pagoFinal,
-          });
-        }
-      } catch(e) {}
-      await new Promise(r => setTimeout(r, 150));
-    }
-
-    const mep = await mepPromise;
-
-    res.json({
-      instrumentos: resultados,
-      mep: mep ? +mep.toFixed(2) : null,
-      actualizadoEn: new Date().toISOString()
-    });
-
-  } catch(e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.get('/debug/:ticker', async (req, res) => {
-  try {
-    const token = await getToken();
-    const r = await fetch(`${IOL_API_URL}/bCBA/Titulos/${req.params.ticker}/CotizacionDetalle`,
-      { headers: { 'Authorization': `Bearer ${token}` } });
-    if (!r.ok) return res.status(r.status).json({ error: 'Ticker no encontrado' });
-    res.json(await r.json());
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.get('/test', async (req, res) => {
-  try { await getToken(); res.json({ ok: true, msg: 'Auth IOL OK' }); }
-  catch(e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.get('/', (req, res) => res.json({ status: 'ok', msg: 'LECAPS API funcionando' }));
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
+app.get(
