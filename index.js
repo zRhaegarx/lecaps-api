@@ -151,4 +151,15 @@ app.get('/test', async (req, res) => {
 app.get('/', (req, res) => res.json({ status: 'ok', msg: 'LECAPS API funcionando' }));
 
 const PORT = process.env.PORT || 3000;
+app.get('/cer-bcra-test', async (req, res) => {
+  try {
+    const r = await fetch('https://api.bcra.gob.ar/estadisticas/v3.0/Monetarias', {
+      headers: { 'Accept': 'application/json' }
+    });
+    const d = await r.json();
+    // Buscar CER en la lista
+    const cer = d.results.filter(x => x.descripcion.toUpperCase().includes('CER'));
+    res.json(cer);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
