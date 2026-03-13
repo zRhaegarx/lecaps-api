@@ -54,6 +54,7 @@ const CER_DATA = {
   'X31L6': { vencimiento: '2026-07-31', pagoFinal: 100, tipo: 'LECER' },
   'TX26':  { vencimiento: '2026-11-09', pagoFinal: 100, tipo: 'BONCER' },
   'TZXO6': { vencimiento: '2026-10-31', pagoFinal: 100, tipo: 'LECER' },
+  'X3ON6': { vencimiento: '2026-11-30', pagoFinal: 100, tipo: 'LECER' },
   'TZXD6': { vencimiento: '2026-12-31', pagoFinal: 100, tipo: 'LECER' },
   'TZXM7': { vencimiento: '2027-03-31', pagoFinal: 100, tipo: 'LECER' },
   'TZXA7': { vencimiento: '2027-04-30', pagoFinal: 100, tipo: 'LECER' },
