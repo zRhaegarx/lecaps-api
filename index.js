@@ -68,4 +68,57 @@ async function getMEP(token) {
   return pesos.precio / dolares.precio;
 }
 
-app.get(
+app.get('/lecaps', async (req, res) => {
+  try {
+    const token = await getToken();
+    const resultados = [];
+    const mepPromise = getMEP(token);
+
+    for (const [ticker, info] of Object.entries(LECAPS_DATA)) {
+      try {
+        const detalle = await getPrecioDetalle(ticker, token);
+        if (detalle?.precio) {
+          resultados.push({
+            ticker,
+            precio: detalle.precio,
+            cierreAnterior: detalle.cierreAnterior,
+            vencimiento: info.vencimiento,
+            pagoFinal: info.pagoFinal,
+          });
+        }
+      } catch(e) {}
+      await new Promise(r => setTimeout(r, 150));
+    }
+
+    const mep = await mepPromise;
+
+    res.json({
+      instrumentos: resultados,
+      mep: mep ? +mep.toFixed(2) : null,
+      actualizadoEn: new Date().toISOString()
+    });
+
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/debug/:ticker', async (req, res) => {
+  try {
+    const token = await getToken();
+    const r = await fetch(`${IOL_API_URL}/bCBA/Titulos/${req.params.ticker}/CotizacionDetalle`,
+      { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!r.ok) return res.status(r.status).json({ error: 'Ticker no encontrado' });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/test', async (req, res) => {
+  try { await getToken(); res.json({ ok: true, msg: 'Auth IOL OK' }); }
+  catch(e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/', (req, res) => res.json({ status: 'ok', msg: 'LECAPS API funcionando' }));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
