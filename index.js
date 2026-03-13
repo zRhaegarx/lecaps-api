@@ -46,6 +46,25 @@ const LECAPS_DATA = {
   'T30J7': { vencimiento: '2027-06-30', pagoFinal: 156.0370 },
 };
 
+const CER_DATA = {
+  'TZXM6': { vencimiento: '2026-03-31', pagoFinal: 100, tipo: 'LECER' },
+  'X15Y6': { vencimiento: '2026-05-15', pagoFinal: 100, tipo: 'LECER' },
+  'X29Y6': { vencimiento: '2026-05-29', pagoFinal: 100, tipo: 'LECER' },
+  'TZX26': { vencimiento: '2026-06-30', pagoFinal: 100, tipo: 'LECER' },
+  'X31L6': { vencimiento: '2026-07-31', pagoFinal: 100, tipo: 'LECER' },
+  'TX26':  { vencimiento: '2026-11-09', pagoFinal: 100, tipo: 'BONCER' },
+  'TZXO6': { vencimiento: '2026-10-31', pagoFinal: 100, tipo: 'LECER' },
+  'TZXD6': { vencimiento: '2026-12-31', pagoFinal: 100, tipo: 'LECER' },
+  'TZXM7': { vencimiento: '2027-03-31', pagoFinal: 100, tipo: 'LECER' },
+  'TZXA7': { vencimiento: '2027-04-30', pagoFinal: 100, tipo: 'LECER' },
+  'TZXY7': { vencimiento: '2027-05-31', pagoFinal: 100, tipo: 'LECER' },
+  'TZX27': { vencimiento: '2027-06-30', pagoFinal: 100, tipo: 'LECER' },
+  'TX28':  { vencimiento: '2028-09-13', pagoFinal: 100, tipo: 'BONCER' },
+  'TZXD7': { vencimiento: '2027-12-31', pagoFinal: 100, tipo: 'LECER' },
+  'TZX28': { vencimiento: '2028-06-30', pagoFinal: 100, tipo: 'LECER' },
+  'TX31':  { vencimiento: '2031-11-23', pagoFinal: 100, tipo: 'BONCER' },
+};
+
 async function getPrecioDetalle(ticker, token) {
   const r = await fetch(
     `${IOL_API_URL}/bCBA/Titulos/${ticker}/CotizacionDetalle`,
@@ -68,36 +87,46 @@ async function getMEP(token) {
   return pesos.precio / dolares.precio;
 }
 
+async function fetchInstrumentos(dataMap, token) {
+  const resultados = [];
+  for (const [ticker, info] of Object.entries(dataMap)) {
+    try {
+      const detalle = await getPrecioDetalle(ticker, token);
+      if (detalle?.precio) {
+        resultados.push({
+          ticker,
+          precio: detalle.precio,
+          cierreAnterior: detalle.cierreAnterior,
+          vencimiento: info.vencimiento,
+          pagoFinal: info.pagoFinal,
+          ...(info.tipo ? { tipo: info.tipo } : {}),
+        });
+      }
+    } catch(e) {}
+    await new Promise(r => setTimeout(r, 150));
+  }
+  return resultados;
+}
+
 app.get('/lecaps', async (req, res) => {
   try {
     const token = await getToken();
-    const resultados = [];
     const mepPromise = getMEP(token);
-
-    for (const [ticker, info] of Object.entries(LECAPS_DATA)) {
-      try {
-        const detalle = await getPrecioDetalle(ticker, token);
-        if (detalle?.precio) {
-          resultados.push({
-            ticker,
-            precio: detalle.precio,
-            cierreAnterior: detalle.cierreAnterior,
-            vencimiento: info.vencimiento,
-            pagoFinal: info.pagoFinal,
-          });
-        }
-      } catch(e) {}
-      await new Promise(r => setTimeout(r, 150));
-    }
-
+    const instrumentos = await fetchInstrumentos(LECAPS_DATA, token);
     const mep = await mepPromise;
+    res.json({ instrumentos, mep: mep ? +mep.toFixed(2) : null, actualizadoEn: new Date().toISOString() });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
-    res.json({
-      instrumentos: resultados,
-      mep: mep ? +mep.toFixed(2) : null,
-      actualizadoEn: new Date().toISOString()
-    });
-
+app.get('/cer', async (req, res) => {
+  try {
+    const token = await getToken();
+    const mepPromise = getMEP(token);
+    const instrumentos = await fetchInstrumentos(CER_DATA, token);
+    const mep = await mepPromise;
+    res.json({ instrumentos, mep: mep ? +mep.toFixed(2) : null, actualizadoEn: new Date().toISOString() });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
