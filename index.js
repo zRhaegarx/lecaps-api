@@ -48,22 +48,23 @@ const LECAPS_DATA = {
 
 const CER_DATA = {
   'TZXM6': { vencimiento: '2026-03-31', pagoFinal: 100, tipo: 'LECER' },
-  'X15Y6': { vencimiento: '2026-05-15', pagoFinal: 100, tipo: 'LECER' },
-  'X29Y6': { vencimiento: '2026-05-29', pagoFinal: 100, tipo: 'LECER' },
-  'TZX26': { vencimiento: '2026-06-30', pagoFinal: 100, tipo: 'LECER' },
-  'X31L6': { vencimiento: '2026-07-31', pagoFinal: 100, tipo: 'LECER' },
-  'TX26':  { vencimiento: '2026-11-09', pagoFinal: 100, tipo: 'BONCER' },
-  'TZXO6': { vencimiento: '2026-10-31', pagoFinal: 100, tipo: 'LECER' },
-  'X3ON6': { vencimiento: '2026-11-30', pagoFinal: 100, tipo: 'LECER' },
-  'TZXD6': { vencimiento: '2026-12-31', pagoFinal: 100, tipo: 'LECER' },
-  'TZXM7': { vencimiento: '2027-03-31', pagoFinal: 100, tipo: 'LECER' },
-  'TZXA7': { vencimiento: '2027-04-30', pagoFinal: 100, tipo: 'LECER' },
-  'TZXY7': { vencimiento: '2027-05-31', pagoFinal: 100, tipo: 'LECER' },
-  'TZX27': { vencimiento: '2027-06-30', pagoFinal: 100, tipo: 'LECER' },
-  'TX28':  { vencimiento: '2028-09-13', pagoFinal: 100, tipo: 'BONCER' },
-  'TZXD7': { vencimiento: '2027-12-31', pagoFinal: 100, tipo: 'LECER' },
-  'TZX28': { vencimiento: '2028-06-30', pagoFinal: 100, tipo: 'LECER' },
-  'TX31':  { vencimiento: '2031-11-23', pagoFinal: 100, tipo: 'BONCER' },
+  'X15Y6':  { vencimiento: '2026-05-15', pagoFinal: 100, tipo: 'LECER' },
+  'X29Y6':  { vencimiento: '2026-05-29', pagoFinal: 100, tipo: 'LECER' },
+  'TZX26':  { vencimiento: '2026-06-30', pagoFinal: 100, tipo: 'LECER' },
+  'X31L6':  { vencimiento: '2026-07-31', pagoFinal: 100, tipo: 'LECER' },
+  'TX26':   { vencimiento: '2026-11-09', pagoFinal: 100, tipo: 'BONCER' },
+  'X3OS6':  { vencimiento: '2026-09-30', pagoFinal: 100, tipo: 'BONCER' },
+  'TZXO6':  { vencimiento: '2026-10-31', pagoFinal: 100, tipo: 'LECER' },
+  'X3ON6':  { vencimiento: '2026-11-30', pagoFinal: 100, tipo: 'LECER' },
+  'TZXD6':  { vencimiento: '2026-12-31', pagoFinal: 100, tipo: 'LECER' },
+  'TZXM7':  { vencimiento: '2027-03-31', pagoFinal: 100, tipo: 'LECER' },
+  'TZXA7':  { vencimiento: '2027-04-30', pagoFinal: 100, tipo: 'LECER' },
+  'TZXY7':  { vencimiento: '2027-05-31', pagoFinal: 100, tipo: 'LECER' },
+  'TZX27':  { vencimiento: '2027-06-30', pagoFinal: 100, tipo: 'LECER' },
+  'TX28':   { vencimiento: '2028-09-13', pagoFinal: 100, tipo: 'BONCER' },
+  'TZXD7':  { vencimiento: '2027-12-31', pagoFinal: 100, tipo: 'LECER' },
+  'TZX28':  { vencimiento: '2028-06-30', pagoFinal: 100, tipo: 'LECER' },
+  'TX31':   { vencimiento: '2031-11-23', pagoFinal: 100, tipo: 'BONCER' },
 };
 
 async function getPrecioDetalle(ticker, token) {
@@ -147,81 +148,8 @@ app.get('/test', async (req, res) => {
   try { await getToken(); res.json({ ok: true, msg: 'Auth IOL OK' }); }
   catch(e) { res.status(500).json({ ok: false, error: e.message }); }
 });
-const CER_DATA = {
-  'TZXM6': { vencimiento: '2026-03-31', tipo: 'LECER' },
-  'X15Y6':  { vencimiento: '2026-05-15', tipo: 'BONCER' },
-  'X29Y6':  { vencimiento: '2026-05-29', tipo: 'BONCER' },
-  'TZX26':  { vencimiento: '2026-06-30', tipo: 'LECER' },
-  'X31L6':  { vencimiento: '2026-07-31', tipo: 'BONCER' },
-  'TX26':   { vencimiento: '2026-11-09', tipo: 'BONCER' },
-  'X3OS6':  { vencimiento: '2026-09-30', tipo: 'BONCER' },
-  'TZXO6':  { vencimiento: '2026-10-30', tipo: 'LECER' },
-  'X3ON6':  { vencimiento: '2026-11-30', tipo: 'BONCER' },
-  'TZXD6':  { vencimiento: '2026-12-15', tipo: 'LECER' },
-  'TZXM7':  { vencimiento: '2027-03-31', tipo: 'LECER' },
-  'TZXA7':  { vencimiento: '2027-04-30', tipo: 'LECER' },
-  'TZXY7':  { vencimiento: '2027-05-31', tipo: 'LECER' },
-  'TZX27':  { vencimiento: '2027-06-30', tipo: 'LECER' },
-  'TX28':   { vencimiento: '2028-09-11', tipo: 'BONCER' },
-  'TZXD7':  { vencimiento: '2027-12-15', tipo: 'LECER' },
-  'TZX28':  { vencimiento: '2028-06-30', tipo: 'LECER' },
-  'TX31':   { vencimiento: '2031-01-12', tipo: 'BONCER' },
-};
 
-app.get('/cer', async (req, res) => {
-  try {
-    const token = await getToken();
-    const resultados = [];
-
-    const mepPromise = getMEP(token);
-
-    for (const [ticker, info] of Object.entries(CER_DATA)) {
-      try {
-        const r = await fetch(
-          `${IOL_API_URL}/bCBA/Titulos/${ticker}/CotizacionDetalle`,
-          { headers: { 'Authorization': `Bearer ${token}` } }
-        );
-        if (!r.ok) continue;
-        const d = await r.json();
-        const precio = d.ultimoPrecio || d.cierreAnterior || null;
-        const cierreAnterior = d.cierreAnterior || null;
-        if (precio) {
-          resultados.push({
-            ticker,
-            precio,
-            cierreAnterior,
-            vencimiento: info.vencimiento,
-            tipo: info.tipo,
-          });
-        }
-      } catch(e) {}
-      await new Promise(r => setTimeout(r, 150));
-    }
-
-    const mep = await mepPromise;
-
-    res.json({
-      instrumentos: resultados,
-      mep: mep ? +mep.toFixed(2) : null,
-      actualizadoEn: new Date().toISOString()
-    });
-
-  } catch(e) {
-    res.status(500).json({ error: e.message });
-  }
-});
 app.get('/', (req, res) => res.json({ status: 'ok', msg: 'LECAPS API funcionando' }));
 
 const PORT = process.env.PORT || 3000;
-app.get('/cer-bcra-test', async (req, res) => {
-  try {
-    const r = await fetch('https://api.bcra.gob.ar/estadisticas/v3.0/Monetarias', {
-      headers: { 'Accept': 'application/json' }
-    });
-    const d = await r.json();
-    // Buscar CER en la lista
-    const cer = d.results.filter(x => x.descripcion.toUpperCase().includes('CER'));
-    res.json(cer);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
 app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
