@@ -144,7 +144,17 @@ app.get('/test', async (req, res) => {
   try { await getToken(); res.json({ ok: true, msg: 'Auth IOL OK' }); }
   catch(e) { res.status(500).json({ ok: false, error: e.message }); }
 });
-
+app.get('/cer-coeficiente', async (req, res) => {
+  try {
+    const r = await fetch('https://api.bcra.gob.ar/estadisticas/v3.0/dasboard', {
+      headers: { 'Accept': 'application/json' }
+    });
+    const d = await r.json();
+    res.json(d);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 app.get('/', (req, res) => res.json({ status: 'ok', msg: 'LECAPS API funcionando' }));
 
 const PORT = process.env.PORT || 3000;
