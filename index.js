@@ -52,8 +52,6 @@ const CER_DATA = {
   'X29Y6':  { vencimiento: '2026-05-29', pagoFinal: 100, tipo: 'LECER' },
   'TZX26':  { vencimiento: '2026-06-30', pagoFinal: 100, tipo: 'LECER' },
   'X31L6':  { vencimiento: '2026-07-31', pagoFinal: 100, tipo: 'LECER' },
-  'TX26':   { vencimiento: '2026-11-09', pagoFinal: 100, tipo: 'BONCER' },
-  'X3OS6':  { vencimiento: '2026-09-30', pagoFinal: 100, tipo: 'BONCER' },
   'TZXO6':  { vencimiento: '2026-10-31', pagoFinal: 100, tipo: 'LECER' },
   'X3ON6':  { vencimiento: '2026-11-30', pagoFinal: 100, tipo: 'LECER' },
   'TZXD6':  { vencimiento: '2026-12-31', pagoFinal: 100, tipo: 'LECER' },
@@ -61,10 +59,8 @@ const CER_DATA = {
   'TZXA7':  { vencimiento: '2027-04-30', pagoFinal: 100, tipo: 'LECER' },
   'TZXY7':  { vencimiento: '2027-05-31', pagoFinal: 100, tipo: 'LECER' },
   'TZX27':  { vencimiento: '2027-06-30', pagoFinal: 100, tipo: 'LECER' },
-  'TX28':   { vencimiento: '2028-09-13', pagoFinal: 100, tipo: 'BONCER' },
   'TZXD7':  { vencimiento: '2027-12-31', pagoFinal: 100, tipo: 'LECER' },
   'TZX28':  { vencimiento: '2028-06-30', pagoFinal: 100, tipo: 'LECER' },
-  'TX31':   { vencimiento: '2031-11-23', pagoFinal: 100, tipo: 'BONCER' },
 };
 
 async function getPrecioDetalle(ticker, token) {
