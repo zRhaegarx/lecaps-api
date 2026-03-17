@@ -85,6 +85,23 @@ async function getMEP(token) {
   return pesos.precio / dolares.precio;
 }
 
+async function getCER() {
+  try {
+    const r = await fetch('https://api.bcra.gob.ar/estadisticas/v3.0/Monetarias/3', {
+      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    // El BCRA devuelve una lista de valores, tomamos el más reciente
+    const resultados = d.results || d.data || [];
+    if (!resultados.length) return null;
+    const ultimo = resultados[resultados.length - 1];
+    return ultimo.valor || ultimo.value || null;
+  } catch(e) {
+    return null;
+  }
+}
+
 async function fetchInstrumentos(dataMap, token) {
   const resultados = [];
   for (const [ticker, info] of Object.entries(dataMap)) {
@@ -121,10 +138,26 @@ app.get('/lecaps', async (req, res) => {
 app.get('/cer', async (req, res) => {
   try {
     const token = await getToken();
-    const mepPromise = getMEP(token);
+    const [mep, cer] = await Promise.all([getMEP(token), getCER()]);
     const instrumentos = await fetchInstrumentos(CER_DATA, token);
-    const mep = await mepPromise;
-    res.json({ instrumentos, mep: mep ? +mep.toFixed(2) : null, actualizadoEn: new Date().toISOString() });
+    res.json({
+      instrumentos,
+      mep: mep ? +mep.toFixed(2) : null,
+      cer: cer ? +parseFloat(cer).toFixed(6) : null,
+      actualizadoEn: new Date().toISOString()
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/cer-coeficiente', async (req, res) => {
+  try {
+    const r = await fetch('https://api.bcra.gob.ar/estadisticas/v3.0/Monetarias/3', {
+      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }
+    });
+    const d = await r.json();
+    res.json(d);
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
@@ -144,17 +177,7 @@ app.get('/test', async (req, res) => {
   try { await getToken(); res.json({ ok: true, msg: 'Auth IOL OK' }); }
   catch(e) { res.status(500).json({ ok: false, error: e.message }); }
 });
-app.get('/cer-coeficiente', async (req, res) => {
-  try {
-    const r = await fetch('https://api.bcra.gob.ar/estadisticas/v3.0/dasboard', {
-      headers: { 'Accept': 'application/json' }
-    });
-    const d = await r.json();
-    res.json(d);
-  } catch(e) {
-    res.status(500).json({ error: e.message });
-  }
-});
+
 app.get('/', (req, res) => res.json({ status: 'ok', msg: 'LECAPS API funcionando' }));
 
 const PORT = process.env.PORT || 3000;
