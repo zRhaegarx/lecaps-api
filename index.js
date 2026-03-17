@@ -46,23 +46,6 @@ const LECAPS_DATA = {
   'T30J7': { vencimiento: '2027-06-30', pagoFinal: 156.0370 },
 };
 
-const CER_DATA = {
-  'TZXM6': { vencimiento: '2026-03-31', pagoFinal: 100, tipo: 'LECER' },
-  'X15Y6':  { vencimiento: '2026-05-15', pagoFinal: 100, tipo: 'LECER' },
-  'X29Y6':  { vencimiento: '2026-05-29', pagoFinal: 100, tipo: 'LECER' },
-  'TZX26':  { vencimiento: '2026-06-30', pagoFinal: 100, tipo: 'LECER' },
-  'X31L6':  { vencimiento: '2026-07-31', pagoFinal: 100, tipo: 'LECER' },
-  'TZXO6':  { vencimiento: '2026-10-31', pagoFinal: 100, tipo: 'LECER' },
-  'X3ON6':  { vencimiento: '2026-11-30', pagoFinal: 100, tipo: 'LECER' },
-  'TZXD6':  { vencimiento: '2026-12-31', pagoFinal: 100, tipo: 'LECER' },
-  'TZXM7':  { vencimiento: '2027-03-31', pagoFinal: 100, tipo: 'LECER' },
-  'TZXA7':  { vencimiento: '2027-04-30', pagoFinal: 100, tipo: 'LECER' },
-  'TZXY7':  { vencimiento: '2027-05-31', pagoFinal: 100, tipo: 'LECER' },
-  'TZX27':  { vencimiento: '2027-06-30', pagoFinal: 100, tipo: 'LECER' },
-  'TZXD7':  { vencimiento: '2027-12-31', pagoFinal: 100, tipo: 'LECER' },
-  'TZX28':  { vencimiento: '2028-06-30', pagoFinal: 100, tipo: 'LECER' },
-};
-
 async function getPrecioDetalle(ticker, token) {
   const r = await fetch(
     `${IOL_API_URL}/bCBA/Titulos/${ticker}/CotizacionDetalle`,
@@ -85,23 +68,6 @@ async function getMEP(token) {
   return pesos.precio / dolares.precio;
 }
 
-async function getCER() {
-  try {
-    const r = await fetch('https://api.bcra.gob.ar/estadisticas/v3.0/Monetarias/3', {
-      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }
-    });
-    if (!r.ok) return null;
-    const d = await r.json();
-    // El BCRA devuelve una lista de valores, tomamos el más reciente
-    const resultados = d.results || d.data || [];
-    if (!resultados.length) return null;
-    const ultimo = resultados[resultados.length - 1];
-    return ultimo.valor || ultimo.value || null;
-  } catch(e) {
-    return null;
-  }
-}
-
 async function fetchInstrumentos(dataMap, token) {
   const resultados = [];
   for (const [ticker, info] of Object.entries(dataMap)) {
@@ -114,7 +80,6 @@ async function fetchInstrumentos(dataMap, token) {
           cierreAnterior: detalle.cierreAnterior,
           vencimiento: info.vencimiento,
           pagoFinal: info.pagoFinal,
-          ...(info.tipo ? { tipo: info.tipo } : {}),
         });
       }
     } catch(e) {}
@@ -130,34 +95,6 @@ app.get('/lecaps', async (req, res) => {
     const instrumentos = await fetchInstrumentos(LECAPS_DATA, token);
     const mep = await mepPromise;
     res.json({ instrumentos, mep: mep ? +mep.toFixed(2) : null, actualizadoEn: new Date().toISOString() });
-  } catch(e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.get('/cer', async (req, res) => {
-  try {
-    const token = await getToken();
-    const [mep, cer] = await Promise.all([getMEP(token), getCER()]);
-    const instrumentos = await fetchInstrumentos(CER_DATA, token);
-    res.json({
-      instrumentos,
-      mep: mep ? +mep.toFixed(2) : null,
-      cer: cer ? +parseFloat(cer).toFixed(6) : null,
-      actualizadoEn: new Date().toISOString()
-    });
-  } catch(e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.get('/cer-coeficiente', async (req, res) => {
-  try {
-    const r = await fetch('https://api.bcra.gob.ar/estadisticas/v3.0/Monetarias/3', {
-      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }
-    });
-    const d = await r.json();
-    res.json(d);
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
