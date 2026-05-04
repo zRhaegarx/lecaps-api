@@ -1,8 +1,0 @@
-{
-  "routes": [
-    { "src": "/lecaps", "dest": "/api/lecaps" },
-    { "src": "/debug/(.*)", "dest": "/api/debug?ticker=$1" },
-    { "src": "/test", "dest": "/api/test" },
-    { "src": "/", "dest": "/api/index" }
-  ]
-}
